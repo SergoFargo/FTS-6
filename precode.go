@@ -65,34 +65,38 @@ func postTask(w http.ResponseWriter, r *http.Request) {
 	tasks[task.ID] = task
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(task); err != nil {
-		http.Error(w, "Ошибка при создании задачи", http.StatusInternalServerError)
-		return
-	}
+
 }
 
 // Обработчик для получения задачи по ID
 func getTaskByID(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	task, exists := tasks[id]
-	if !exists {
+
+	task, ok := tasks[id]
+	if !ok {
 		http.Error(w, "Задача не найдена", http.StatusNotFound)
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(task); err != nil {
-		http.Error(w, "Ошибка при получении задачи", http.StatusInternalServerError)
+	resp, err := json.Marshal(task)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(resp)
 }
 
 // Обработчик для удаления задачи по ID
 func deleteTask(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
+
 	if _, exists := tasks[id]; !exists {
 		http.Error(w, "Задача не найдена", http.StatusNotFound)
 		return
 	}
+	w.Header().Set("Content-Type", "application/json")
 	delete(tasks, id)
 	w.WriteHeader(http.StatusOK)
 }
